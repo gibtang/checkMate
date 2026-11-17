@@ -1,4 +1,7 @@
 name: Run Tests
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 on:
   pull_request:
     paths-ignore:
@@ -12,8 +15,16 @@ on:
 jobs:
   run_tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v3
+      - name: Cache npm packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Build
         run: docker compose -f docker-compose-base.yml build --no-cache
       - name: Run unit tests
